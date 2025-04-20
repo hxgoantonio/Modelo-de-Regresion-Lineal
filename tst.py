@@ -1,104 +1,79 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from utility import ajustar_modelo
 
 def calcular_rmse(y_real, y_pred):
-    """Calcula el RMSE (Root Mean Squared Error)"""
     return np.sqrt(np.mean((y_real - y_pred)**2))
 
 def calcular_r2(y_real, y_pred):
-    """Calcula el R² (Coeficiente de Determinación)"""
     ss_total = np.sum((y_real - np.mean(y_real))**2)
     ss_res = np.sum((y_real - y_pred)**2)
     return 1 - (ss_res / ss_total)
 
-def calcular_durbin_watson(residuales):
-    """Calcula el estadístico de Durbin-Watson"""
-    diff_res = np.diff(residuales.flatten())
-    return np.sum(diff_res**2) / np.sum(residuales**2)
+def calcular_durbin_watson(residuals):
+    diff = np.diff(residuals)
+    return np.sum(diff**2) / np.sum(residuals**2)
 
-# 1. Cargar datos y modelo
-try:
-    dtst = pd.read_csv('dtst.csv', header=None).values
-    X_test = dtst[:, :-1]
-    y_test = dtst[:, -1].reshape(-1, 1)
+def main():
+    try:
+        # 1. Cargar coeficientes y variables
+        coeffs = pd.read_csv('coefts.csv', header=None).values.flatten()
+        intercept = coeffs[0]
+        coef = coeffs[1:]
+        selected_vars = pd.read_csv('selected_vars.csv', header=None).values.flatten()
+        selected_indices = [int(var[1:])-1 for var in selected_vars]
+        
+        # 2. Cargar y preparar datos de prueba
+        test_data = pd.read_csv('dtst.csv', header=None).values
+        X_test = test_data[:, selected_indices]
+        y_test = test_data[:, -1]
+        
+        # 3. Calcular predicciones
+        y_pred = intercept + X_test @ coef
+        
+        # 4. Calcular y guardar métricas
+        rmse = calcular_rmse(y_test, y_pred)
+        r2 = calcular_r2(y_test, y_pred)
+        residuals = y_test - y_pred
+        dw = calcular_durbin_watson(residuals)
+        
+        pd.DataFrame([[rmse, r2, dw]], columns=['RMSE', 'R2', 'Durbin-Watson']).to_csv('metrica.csv', index=False)
+        pd.DataFrame({'Real': y_test, 'Predicted': y_pred}).to_csv('real_pred.csv', index=False)
+        
+        # 5. Gráfico figure3.png (Real vs Estimados)
+        plt.figure(figsize=(12, 6))
+        muestras = np.arange(len(y_test))
+        
+        plt.plot(muestras, y_test, 'b-', linewidth=1.5, label='Real Values')
+        plt.plot(muestras, y_pred, 'r--', linewidth=1.5, label='Estimated Value')
+        
+        plt.ylim(-15, 20)
+        plt.yticks([-15, -10, -5, 0, 5, 10, 15, 20])
+        plt.xticks(np.arange(0, len(y_test)+1, 20))
+        
+        plt.xlabel('Nro. Muestras', fontsize=12)
+        plt.ylabel('Values', fontsize=12)
+        plt.title('Real vs Estimados', fontsize=14)
+        plt.grid(True, linestyle='--', alpha=0.3)
+        plt.legend()
+        plt.savefig('figure3.png', dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        # 6. Gráfico figure4.png (Residuals)
+        plt.figure(figsize=(10, 5))
+        plt.scatter(y_pred, residuals, alpha=0.6, edgecolor='k', linewidth=0.5)
+        plt.axhline(y=0, color='r', linestyle='--', linewidth=1)
+        plt.xlabel('Estimated-Y values', fontsize=11)
+        plt.ylabel('Residuals', fontsize=11)
+        plt.title('Residuals vs Estimados', fontsize=13)
+        plt.grid(True, linestyle='--', alpha=0.3)
+        plt.savefig('figure4.png', dpi=300, bbox_inches='tight')
+        plt.close()
+        
+    except Exception as e:
+        print(f"Error en tst.py: {e}")
+        raise
 
-    coefts = pd.read_csv('coefts.csv')
-    selected_vars = pd.read_csv('selected_vars.csv')['variable'].tolist()
-
-    # Obtener índices de las variables seleccionadas
-    data_cols = pd.read_csv('dataset.csv').columns[:-1].tolist()
-    selected_indices = [data_cols.index(var) for var in selected_vars if var in data_cols]
-    X_test_selected = X_test[:, selected_indices]
-
-    # 2. Hacer predicciones
-    intercept = coefts[coefts['variable'] == 'intercept']['coef'].values[0]
-    coef_values = coefts[coefts['variable'] != 'intercept']['coef'].values.reshape(-1, 1)
-
-    y_pred = intercept + X_test_selected @ coef_values
-
-    # 3. Calcular métricas
-    rmse = calcular_rmse(y_test, y_pred)
-    r2 = calcular_r2(y_test, y_pred)
-    dw = calcular_durbin_watson(y_test - y_pred)
-
-    # 4. Guardar resultados
-    # Métricas
-    pd.DataFrame({
-        'metric': ['RMSE', 'R2', 'Durbin-Watson'],
-        'value': [rmse, r2, dw]
-    }).to_csv('metrica.csv', index=False)
-
-    # Valores reales vs predichos
-    pd.DataFrame({
-        'real': y_test.flatten(),
-        'pred': y_pred.flatten()
-    }).to_csv('real_pred.csv', index=False)
-
-    # 5. Crear gráficos
-    # Configuración de estilo sin dependencia de seaborn
-    plt.rcParams['figure.facecolor'] = 'white'
-    plt.rcParams['axes.grid'] = True
-    plt.rcParams['grid.linestyle'] = '--'
-    plt.rcParams['grid.alpha'] = 0.6
-
-    # Figura 3: Real vs Estimado
-    plt.figure(figsize=(12, 6))
-    plt.plot(y_test, 'b-', label='Valor Real', linewidth=2, alpha=0.7)
-    plt.plot(y_pred, 'r--', label='Valor Estimado', linewidth=2, alpha=0.7)
-    plt.xlabel('Nro. Muestras', fontsize=12)
-    plt.ylabel('Valor del Costo', fontsize=12)
-    plt.title('Comparación: Valor Real vs. Estimado', fontsize=14)
-    plt.legend(fontsize=10)
-    plt.xticks(np.arange(0, len(y_test), 20))
-    plt.tight_layout()
-    plt.savefig('figure3.png', dpi=300)
-    plt.close()
-
-    # Figura 4: Residuales vs Estimado
-    residuals = y_test - y_pred
-    plt.figure(figsize=(12, 6))
-    plt.scatter(y_pred, residuals, alpha=0.6, color='green')
-    plt.axhline(y=0, color='k', linestyle='--')
-    plt.xlabel('Valor Estimado', fontsize=12)
-    plt.ylabel('Residuales', fontsize=12)
-    plt.title('Análisis de Residuales', fontsize=14)
-    plt.tight_layout()
-    plt.savefig('figure4.png', dpi=300)
-    plt.close()
-
-    print("Proceso completado exitosamente. Archivos generados:")
-    print("- metrica.csv")
-    print("- real_pred.csv")
-    print("- figure3.png")
-    print("- figure4.png")
-
-except FileNotFoundError as e:
-    print(f"Error: Archivo no encontrado - {e}")
-    print("Asegúrate de tener todos los archivos necesarios:")
-    print("- data.csv")
-    print("- dtst.csv")
-    print("- coefts.csv")
-    print("- selected_vars.csv")
-except Exception as e:
-    print(f"Error inesperado: {e}")
+if __name__ == '__main__':
+    main()
