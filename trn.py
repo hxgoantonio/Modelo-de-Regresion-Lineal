@@ -3,9 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from utility import ajustar_modelo, calcular_indice_colinealidad
 
-# Configuración para reproducibilidad
-np.random.seed(42)
-
 def main():
     try:
         # 1. Cargar datos
@@ -16,11 +13,8 @@ def main():
         # 2. Dividir datos (80% train, 20% test)
         n_samples = X.shape[0]
         n_train = int(0.8 * n_samples)
-        indices = np.random.permutation(n_samples)
-        train_idx, test_idx = indices[:n_train], indices[n_train:]
-        
-        X_train, y_train = X[train_idx], y[train_idx]
-        X_test, y_test = X[test_idx], y[test_idx]
+        X_train, y_train = X[:n_train], y[:n_train]
+        X_test, y_test = X[n_train:], y[n_train:]
         
         # 3. Guardar conjuntos
         pd.DataFrame(np.hstack((X_train, y_train.reshape(-1, 1)))).to_csv('dtrn.csv', index=False, header=False)

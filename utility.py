@@ -1,8 +1,5 @@
 import numpy as np
 
-# Configurar semilla para reproducibilidad
-np.random.seed(42)
-
 def ajustar_modelo(X, y):
     """
     Ajusta un modelo de regresión lineal usando la matriz pseudoinversa
