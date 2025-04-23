@@ -18,9 +18,9 @@ def calcular_durbin_watson(residuals):
 def main():
     try:
         # 1. Cargar coeficientes y variables
-        coeffs = pd.read_csv('coefts.csv', header=None).values.flatten()
-        intercept = coeffs[0]
-        coef = coeffs[1:]
+        coeffs_df = pd.read_csv('coefts.csv')
+        intercept = coeffs_df[coeffs_df['Variable'] == 'Intercepto']['Coeficiente'].values[0]
+        coef = coeffs_df[coeffs_df['Variable'] != 'Intercepto']['Coeficiente'].values
         selected_vars = pd.read_csv('selected_vars.csv', header=None).values.flatten()
         selected_indices = [int(var[1:])-1 for var in selected_vars]
         

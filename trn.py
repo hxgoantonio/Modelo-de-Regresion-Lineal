@@ -44,7 +44,11 @@ def main():
         intercept, coef = ajustar_modelo(X_temp, y_train)
         
         # 6. Guardar resultados
-        pd.DataFrame(np.hstack(([intercept], coef))).to_csv('coefts.csv', index=False, header=False)
+        variables = ['Intercepto'] + ['X' + str(i+1) for i in selected_vars]
+        pd.DataFrame({
+            'Variable': variables,
+            'Coeficiente': np.hstack(([intercept], coef))
+            }).to_csv('coefts.csv', index=False)
         pd.DataFrame(['X'+str(i+1) for i in deleted_vars]).to_csv('deleted_vars.csv', index=False, header=False)
         pd.DataFrame(['X'+str(i+1) for i in selected_vars]).to_csv('selected_vars.csv', index=False, header=False)
         
