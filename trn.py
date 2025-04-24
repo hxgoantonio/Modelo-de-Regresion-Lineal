@@ -53,24 +53,35 @@ def main():
         pd.DataFrame(['X'+str(i+1) for i in selected_vars]).to_csv('selected_vars.csv', index=False, header=False)
         
         # 7. Gráficos
+        # Figura1
         if deleted_vars:
-            plt.figure(figsize=(10, 5))
-            plt.bar(['X'+str(i+1) for i in deleted_vars], deleted_idx_values, color='red')
-            plt.title('Variables Eliminadas: Índice de Colinealidad')
-            plt.xlabel('Variable')
-            plt.ylabel('Valor del Índice')
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.bar(['X'+str(i+1) for i in deleted_vars], deleted_idx_values, color='#003366')
+            ax.set_title('Variables Eliminadas: Índice de Colinealidad')
+            ax.set_xlabel('Variable')
+            ax.set_ylabel('Valor del Índice')
+            
+            ax.set_axisbelow(True)  # El grid va detrás de las barras
+            ax.grid(True, which='both', axis='both', linestyle=':', color='gray', linewidth=0.3)  # Gris fuerte sin opacidad
+
             plt.savefig('figure1.png', bbox_inches='tight')
             plt.close()
         
+        # Figura2
         if selected_vars:
             I_final = calcular_indice_colinealidad(X_temp, y_train)
-            plt.figure(figsize=(10, 5))
-            plt.bar(['X'+str(i+1) for i in selected_vars], I_final, color='green')
-            plt.title('Variables Seleccionadas: Índice de Colinealidad')
-            plt.xlabel('Variable')
-            plt.ylabel('Valor del Índice')
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.bar(['X'+str(i+1) for i in selected_vars], I_final, color='#003366')  # Azul oscuro
+            ax.set_title('Variables Seleccionadas: Índice de Colinealidad')
+            ax.set_xlabel('Variable')
+            ax.set_ylabel('Valor del Índice')
+            
+            ax.set_axisbelow(True)  # Cuadrícula detrás de las barras
+            ax.grid(True, which='both', axis='both', linestyle=':', color='gray', linewidth=0.3)  # Cuadrícula fuerte y visible
+
             plt.savefig('figure2.png', bbox_inches='tight')
             plt.close()
+            
             
     except Exception as e:
         print(f"Error: {e}")
